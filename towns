@@ -1,0 +1,28 @@
+-- some terms and columns have been renamed/redacted for confidentiality
+-- join <towns>, <town_vers>, <provinces>, <province_vers>, <countries>, <province_types>
+
+
+WITH CTE_towns AS
+(SELECT *, 
+ ROW_NUMBER() OVER (PARTITION BY province_id, deleted_at, status, platform_town_id ORDER BY id DESC, province_id) AS RN
+ FROM towns
+), 
+CTE_province_vers AS
+(SELECT *,
+ SUM(CASE WHEN site_country_id = 102 THEN ac_mwp END) OVER (PARTITION BY id) AS province_ac_mwp_india,
+ SUM(CASE WHEN site_country_id = 245 THEN ac_mwp END) OVER (PARTITION BY id) AS province_ac_mwp_vietnam
+ FROM province_vers
+)
+
+SELECT towns_vers.id AS town_vers_id, *REDACTED*,
+A.id AS town_id, *REDACTED*,
+provinces.created_at AS provinces_created_at,
+CTE_province_vers.ac_mwp AS province_ac_mwp, *REDACTED*,
+countries.name AS province_country_name, *REDACTED*,
+province_types.slug AS province_renewable_type
+	FROM CTE_towns AS A
+    JOIN town_vers on A.current_version_id = town_vers.id
+    JOIN provinces ON A.province_id = provinces.id
+    JOIN CTE_province_vers ON provinces.last_version_id = CTE_province_vers.id
+    JOIN countries ON CTE_province_vers.site_country_id = countries.id
+    JOIN province_types ON CTE_province_vers.province_type_id = province_types.id;
