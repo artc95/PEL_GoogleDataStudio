@@ -1,0 +1,16 @@
+-- some terms and columns have been renamed/redacted for confidentiality
+-- join <town_accesses>, <towns>, <provinces>, <province_versions>, <users>, <communities>
+
+SELECT A.id AS access_id, *REDACTED*, 
+province_versions.code AS province_code, *REDACTED*,
+users.first_name AS user_first_name, *REDACTED*,
+communities.name AS community_name, *REDACTED*,
+SUM(CASE WHEN province_versions.site_country_id = 102 THEN A.deal_room_id END) OVER (PARTITION BY A.id) AS deal_room_id_india,
+SUM(CASE WHEN province_versions.site_country_id = 245 THEN A.deal_room_id END) OVER (PARTITION BY A.id) AS deal_room_id_vietnam
+	FROM town_accesses AS A
+    JOIN towns ON A.town_id = towns.id
+    JOIN provinces ON towns.province_id = provinces.id
+    JOIN province_versions ON provinces.last_version_id = province_versions.id
+    JOIN users ON A.user_id = users.id
+    JOIN communities ON users.community_id = communities.id
+    LEFT JOIN deal_rooms ON A.deal_room_id = deal_rooms.id;
